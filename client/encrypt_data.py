@@ -15,7 +15,7 @@ def encrypt_data(session_key, plaintext):
     }
 
 # Example usage
-session_key = bytes.fromhex("add777d1de8c66b97b92ec307c6a74dc6df7b16f97e67ef89e7048ba8abef820")  # Replace with session key
+session_key = bytes.fromhex("1357f4fd7660b3f7ec187f0d6b5b3b231733f9a4729e4d34b1bd4af1a1517b06")  # Replace with session key
 plaintext = "Heart rate: 75 bpm"
 encrypted_payload = encrypt_data(session_key, plaintext)
 print(encrypted_payload)
