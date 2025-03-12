@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: wban_auth
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@db/wban_db
+    restart: always
+
+  db:
+    image: postgres:13
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wban_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

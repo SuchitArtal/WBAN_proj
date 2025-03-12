@@ -18,3 +18,5 @@ EXPOSE 5000
 
 # Command to run your app
 CMD ["python", "main.py"]
+ENV FLASK_APP=app
+ENV FLASK_ENV=development

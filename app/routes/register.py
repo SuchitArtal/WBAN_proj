@@ -1,57 +1,45 @@
+import hashlib
 from flask import Blueprint, request, jsonify
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import hashes, serialization
-from app.utils.storage import users, bcrypt
+from app.utils.storage import db, User
+from app import bcrypt
 
 register_bp = Blueprint("register", __name__)
 
-@register_bp.route("/", methods=["POST"])
+@register_bp.route("", methods=["POST"])
 def register():
     try:
-        # Parse the JSON input
         data = request.json
-        user_id = data.get("user_id")
+        user_id = data.get("user_id")  # Accept user_id instead of pseudo_identity
         password = data.get("password")
 
-        # Validate inputs
         if not user_id or not password:
-            return jsonify({"error": "user_id and password are required"}), 400
+            return jsonify({"error": "Missing required fields"}), 400
 
-        # Check if the user is already registered
-        if user_id in users:
+        # Generate ECC Key Pair (To Be Implemented)
+        public_key = "Generated_Public_Key"
+
+        # Generate Pseudo-Identity from user_id using SHA-256
+        pseudo_identity = hashlib.sha256(user_id.encode()).hexdigest()
+
+        # Check if user already exists
+        existing_user = User.query.filter_by(user_id=user_id).first()
+        if existing_user:
             return jsonify({"error": "User already registered"}), 400
 
         # Hash the password using bcrypt
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        # Generate ECC key pair
-        private_key = ec.generate_private_key(ec.SECP256R1())
-        public_key = private_key.public_key()
-
-        # Derive pseudo-identity (PID) using SHA256
-        pid = hashes.Hash(hashes.SHA256())
-        pid.update(public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        ))
-        pseudo_identity = pid.finalize().hex()
-
-        # Store user data
-        users[user_id] = {
-            "private_key": private_key,
-            "public_key": public_key,
-            "pseudo_identity": pseudo_identity,
-            "hashed_password": hashed_password,
-        }
+        # Store user in DB
+        new_user = User(user_id=user_id, pseudo_identity=pseudo_identity,
+                        hashed_password=hashed_password, public_key=public_key)
+        db.session.add(new_user)
+        db.session.commit()
 
         return jsonify({
             "message": "User registered successfully",
             "pseudo_identity": pseudo_identity,
-            "public_key": public_key.public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
-            ).decode('utf-8')
-        })
+            "public_key": public_key
+        }), 201
 
     except Exception as e:
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500

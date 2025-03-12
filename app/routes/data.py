@@ -1,46 +1,35 @@
 from flask import Blueprint, request, jsonify
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
-from app.utils.storage import users
+from app.utils.storage import db, User, Session
 
 data_bp = Blueprint("data", __name__)
 
-@data_bp.route("/", methods=["POST"])
+@data_bp.route("", methods=["POST"])
 def send_data():
     try:
         data = request.json
-        user_id = data.get("user_id")
+        pseudo_identity = data.get("pseudo_identity")
         encrypted_data = data.get("encrypted_data")
         tag = data.get("tag")
         nonce = data.get("nonce")
 
-        if not user_id or not encrypted_data or not tag or not nonce:
+        if not pseudo_identity or not encrypted_data or not tag or not nonce:
             return jsonify({"error": "Missing required fields"}), 400
 
-        user_data = users.get(user_id)
-        if not user_data:
-            return jsonify({"error": "User not found"}), 404
+        # Retrieve session key from DB
+        session = Session.query.filter_by(user_pid=pseudo_identity).first()
+        if not session:
+            return jsonify({"error": "Session not found"}), 404
 
-        session_key = user_data.get("session_key")
-        if not session_key:
-            return jsonify({"error": "Session key not found"}), 400
+        session_key = bytes.fromhex(session.session_key)
 
-        # Debugging logs
-        print(f"Decrypting for user_id: {user_id}")
-        print(f"Encrypted data: {encrypted_data}")
-        print(f"Tag: {tag}, Nonce: {nonce}")
-        print(f"Session key: {session_key}")
-
+        # Decrypt data
         cipher = Cipher(algorithms.AES(session_key), modes.GCM(bytes.fromhex(nonce), bytes.fromhex(tag)), backend=default_backend())
         decryptor = cipher.decryptor()
         decrypted_data = decryptor.update(bytes.fromhex(encrypted_data)) + decryptor.finalize()
 
-        return jsonify({
-            "message": "Data received successfully",
-            "decrypted_data": decrypted_data.decode('utf-8')
-        })
+        return jsonify({"message": "Data received successfully", "decrypted_data": decrypted_data.decode('utf-8')}), 200
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()  # Print full error trace to logs
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500

@@ -1,3 +1,6 @@
 Flask
 cryptography
 flask_bcrypt
+flask_sqlalchemy
+psycopg2-binary
+flask-migrate
