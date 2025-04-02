@@ -1,4 +1,4 @@
-version: "3.8"
+#version: "3.8"
 
 services:
   web:
@@ -7,7 +7,8 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@db/wban_db
     restart: always
@@ -24,6 +25,11 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

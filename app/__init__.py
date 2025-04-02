@@ -12,12 +12,16 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "po
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize extensions
-db = SQLAlchemy() 
+db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-
-# Initialize database after defining `app`
-db.init_app(app)
 migrate = Migrate(app, db)
+
+# Import models
+from app.utils.storage import User, Session
+
+# Create tables
+with app.app_context():
+    db.create_all()
 
 # Import and register blueprints
 from app.routes.register import register_bp

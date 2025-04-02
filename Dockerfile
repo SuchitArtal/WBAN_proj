@@ -16,7 +16,13 @@ COPY . .
 # Expose port 5000 for the app
 EXPOSE 5000
 
-# Command to run your app
-CMD ["python", "main.py"]
+# Set environment variables
 ENV FLASK_APP=app
 ENV FLASK_ENV=development
+
+# Create a startup script
+RUN echo '#!/bin/bash\npython init_db.py\npython main.py' > /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Command to run your app
+CMD ["/app/start.sh"]

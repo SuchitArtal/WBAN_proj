@@ -1,6 +1,6 @@
 import hashlib
 from flask import Blueprint, request, jsonify
-from app.utils.storage import db, User
+from app.utils.storage import db, User  # Import User model & database
 from app import bcrypt
 
 register_bp = Blueprint("register", __name__)
@@ -15,10 +15,7 @@ def register():
         if not user_id or not password:
             return jsonify({"error": "Missing required fields"}), 400
 
-        # Generate ECC Key Pair (To Be Implemented)
-        public_key = "Generated_Public_Key"
-
-        # Generate Pseudo-Identity from user_id using SHA-256
+        # Generate Pseudo-Identity using SHA-256
         pseudo_identity = hashlib.sha256(user_id.encode()).hexdigest()
 
         # Check if user already exists
@@ -29,17 +26,28 @@ def register():
         # Hash the password using bcrypt
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        # Store user in DB
-        new_user = User(user_id=user_id, pseudo_identity=pseudo_identity,
-                        hashed_password=hashed_password, public_key=public_key)
+        # Generate ECC Public Key (To Be Implemented Later)
+        public_key = "Generated_Public_Key"
+
+        # Create new user object
+        new_user = User(
+            user_id=user_id,
+            pseudo_identity=pseudo_identity,
+            hashed_password=hashed_password,
+            public_key=public_key
+        )
+
+        # Add user to the database
         db.session.add(new_user)
         db.session.commit()
 
         return jsonify({
             "message": "User registered successfully",
+            "user_id": user_id,
             "pseudo_identity": pseudo_identity,
             "public_key": public_key
         }), 201
 
     except Exception as e:
+        db.session.rollback()  # Rollback in case of failure
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
