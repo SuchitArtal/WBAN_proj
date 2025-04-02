@@ -4,11 +4,20 @@ A secure authentication and data transmission system for **Wireless Body Area Ne
 
 ## Features
 
-- **User Registration**: Generates ECC key pairs, pseudo-identity using SHA-256, and stores securely hashed passwords.
-- **Authentication**: Validates user credentials and pseudo-identity, then establishes a **secure ECC Diffie-Hellman session key**.
+### Completed Features
+- **User Registration**: Generates pseudo-identity using SHA-256, and stores securely hashed passwords.
+- **Authentication**: Validates user credentials and pseudo-identity, then establishes a secure session key.
 - **Secure Data Transmission**: Uses **AES-GCM** encryption for transmitting sensitive WBAN data.
 - **System Reset**: Allows administrators to **revoke all user data** when necessary.
-- **Modular API**: A Flask-based API with secure cryptographic operations.
+- **PostgreSQL Integration**: Robust database storage for users and sessions.
+- **Docker Support**: Containerized application with Docker and Docker Compose.
+- **Structured API Responses**: Beautiful and well-formatted JSON responses with proper units and timestamps.
+
+### Upcoming Features
+- **ECC Key Management**: Implementation of Elliptic Curve Cryptography for public key generation.
+- **Rate Limiting**: Protection against brute force and DDoS attacks.
+- **Security Logging**: Comprehensive audit trails and security event monitoring.
+- **Cloud Deployment**: Production-ready cloud deployment with proper security measures.
 
 ## System Architecture
 
@@ -17,6 +26,8 @@ The system consists of the following components:
 - **Flask-based Backend**:
   - Built using Flask with modular design (Blueprints for endpoints).
   - Cryptographic operations handled using the `cryptography` library.
+  - PostgreSQL database for persistent storage.
+  - Docker containerization for easy deployment.
 
 - **Endpoints**:
   - `/register`: Registers a new user.
@@ -25,7 +36,6 @@ The system consists of the following components:
   - `/revoke_all`: Deletes all stored user data.
 
 - **Encryption Techniques**:
-  - **Elliptic Curve Cryptography (ECC)**: Used for generating key pairs and secure key exchange.
   - **AES-GCM**: Ensures encrypted and authenticated data transmission.
   - **SHA-256**: Derives pseudo-identities for added security.
   - **Bcrypt**: Hashes user passwords securely.
@@ -35,10 +45,8 @@ The system consists of the following components:
 ### Prerequisites
 
 Ensure you have the following installed:
-
-- Python 3.8+
-- `pip` package manager
-- Virtual environment (`venv`)
+- Docker and Docker Compose
+- Git
 
 ### Steps
 
@@ -48,21 +56,34 @@ Ensure you have the following installed:
    cd WBAN_proj
    ```
 
-2. **Create a virtual environment and activate it**:
+2. **Build and run with Docker**:
    ```sh
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   docker-compose up --build -d
    ```
 
-3. **Install dependencies**:
-   ```sh
-   pip install -r requirements.txt
-   ```
+The application will be available at `http://localhost:5000`
 
-4. **Run the application**:
-   ```sh
-   python main.py
-   ```
+## Database Access
+
+To view the PostgreSQL database:
+```sh
+docker exec -it postgres_db psql -U postgres -d wban_db
+```
+
+Useful PostgreSQL commands:
+```sql
+-- List all tables
+\dt
+
+-- View users table
+SELECT * FROM users;
+
+-- View sessions table
+SELECT * FROM sessions;
+
+-- Exit psql
+\q
+```
 
 ## API Endpoints
 
@@ -80,12 +101,9 @@ Ensure you have the following installed:
 ```json
 {
     "message": "User registered successfully",
-    "pseudo_identity": "<generated_pid>",
-    "public_key": "<generated_public_key>"
+    "pseudo_identity": "<generated_pid>"
 }
 ```
-
----
 
 ### 2. Authenticate User
 **URL**: `/authenticate`  
@@ -93,10 +111,8 @@ Ensure you have the following installed:
 **Request Body**:
 ```json
 {
-    "user_id": "user1",
-    "password": "1234",
     "pseudo_identity": "<generated_pid>",
-    "signed_message": "dummy_signature"
+    "password": "1234"
 }
 ```
 **Response**:
@@ -106,8 +122,6 @@ Ensure you have the following installed:
     "session_key": "<generated_session_key>"
 }
 ```
-
----
 
 ### 3. Send Encrypted Data
 **URL**: `/data`  
@@ -125,12 +139,36 @@ Ensure you have the following installed:
 **Response**:
 ```json
 {
-    "message": "Data received successfully",
-    "decrypted_data": "Heart rate: 75 bpm"
+    "status": "success",
+    "message": "Data received and decrypted successfully",
+    "data": {
+        "vital_signs": {
+            "heart_rate": {
+                "value": 75,
+                "unit": "bpm"
+            },
+            "blood_pressure": {
+                "systolic": {
+                    "value": 120,
+                    "unit": "mmHg"
+                },
+                "diastolic": {
+                    "value": 80,
+                    "unit": "mmHg"
+                }
+            },
+            "temperature": {
+                "value": 36.8,
+                "unit": "°C"
+            }
+        },
+        "metadata": {
+            "timestamp": 1234567890,
+            "formatted_time": "2024-03-31 12:34:56"
+        }
+    }
 }
 ```
-
----
 
 ### 4. Revoke All User Data
 **URL**: `/revoke_all`  
@@ -142,23 +180,13 @@ Ensure you have the following installed:
 }
 ```
 
----
-
 ## Security Measures
 
 - **Mutual Authentication**: Users and the server verify each other's identities.
 - **End-to-End Encryption**: AES-GCM encrypts data for confidentiality and integrity.
-- **Secure Key Management**: ECC ensures lightweight, secure key exchange.
 - **Password Protection**: Bcrypt securely hashes passwords before storing them.
-
-## Future Enhancements
-
-- **Database Integration**: Replace in-memory storage with PostgreSQL.
-- **Multi-Factor Authentication**: Add OTP-based verification.
-- **Logging & Monitoring**: Implement security logs for better auditability.
-- **Lightweight Cryptographic Optimization**: Enhance performance for WBAN devices.
-
----
+- **Database Security**: PostgreSQL with proper access controls.
+- **Containerization**: Isolated environments with Docker.
 
 ## Contributing
 
@@ -167,8 +195,6 @@ Contributions are welcome! Feel free to fork this repository, raise issues, and 
 ## License
 
 This project is licensed under the **MIT License**.
-
----
 
 ## Contact
 
