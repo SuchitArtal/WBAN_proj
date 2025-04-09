@@ -6,6 +6,7 @@ class User(db.Model):
     hashed_password = db.Column(db.String(256), nullable=False)
     pseudo_identity = db.Column(db.String(256), unique=True, nullable=False)
     public_key = db.Column(db.Text, nullable=False)
+    private_key = db.Column(db.Text, nullable=False)  # Add private key column
 
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)

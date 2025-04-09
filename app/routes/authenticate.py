@@ -1,15 +1,16 @@
 import hashlib
 from flask import Blueprint, request, jsonify
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
 from app.utils.storage import db, User, Session  # Ensure Session is correctly imported
-from app import bcrypt
+from app import bcrypt, limiter
+from app.utils.crypto import load_private_key, get_private_key_from_db
 import os
 import time
+import base64
 
 authenticate_bp = Blueprint("authenticate", __name__)
 
 @authenticate_bp.route("", methods=["POST"])
+@limiter.limit("5 per minute")  # Limit authentication attempts
 def authenticate():
     try:
         data = request.json
@@ -31,17 +32,16 @@ def authenticate():
         if not bcrypt.check_password_hash(user.hashed_password, password):
             return jsonify({"error": "Invalid password"}), 401
 
-        # Generate ECC private key
-        private_key = ec.generate_private_key(ec.SECP256R1())
-        public_key = private_key.public_key()
-
-        # Compute session key using ECDH key exchange
-        session_key = private_key.exchange(ec.ECDH(), public_key)
-
-        # Convert session key to a hex string for storage
+        # Get the user's private key from database
+        private_key_pem = get_private_key_from_db(user.user_id, db)
+        if not private_key_pem:
+            return jsonify({"error": "Private key not found"}), 500
+        
+        # Generate a random session key
+        session_key = os.urandom(32)
         session_key_hex = session_key.hex()
 
-        # Store session in DB with correct column name
+        # Store session in DB
         new_session = Session(user_pseudo_identity=user.pseudo_identity, session_key=session_key_hex)
         db.session.add(new_session)
         db.session.commit()
@@ -53,4 +53,5 @@ def authenticate():
         }), 200
 
     except Exception as e:
+        db.session.rollback()  # Rollback in case of failure
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500

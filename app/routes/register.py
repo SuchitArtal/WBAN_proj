@@ -1,11 +1,13 @@
 import hashlib
 from flask import Blueprint, request, jsonify
 from app.utils.storage import db, User  # Import User model & database
-from app import bcrypt
+from app import bcrypt, limiter
+from app.utils.crypto import generate_ecc_key_pair
 
 register_bp = Blueprint("register", __name__)
 
 @register_bp.route("", methods=["POST"])
+@limiter.limit("3 per hour")  # Limit new user registrations
 def register():
     try:
         data = request.json
@@ -26,26 +28,30 @@ def register():
         # Hash the password using bcrypt
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        # Generate ECC Public Key (To Be Implemented Later)
-        public_key = "Generated_Public_Key"
+        # Generate ECC key pair
+        private_key_pem, public_key_pem = generate_ecc_key_pair()
 
-        # Create new user object
+        # Create new user object with private key included
         new_user = User(
             user_id=user_id,
             pseudo_identity=pseudo_identity,
             hashed_password=hashed_password,
-            public_key=public_key
+            public_key=public_key_pem,
+            private_key=private_key_pem  # Store private key in user model
         )
 
         # Add user to the database
         db.session.add(new_user)
         db.session.commit()
 
+        # We don't need to create a separate entry in ecc_keys anymore
+        # since the private key is now stored directly in the user model
+
         return jsonify({
             "message": "User registered successfully",
             "user_id": user_id,
             "pseudo_identity": pseudo_identity,
-            "public_key": public_key
+            "public_key": public_key_pem
         }), 201
 
     except Exception as e:

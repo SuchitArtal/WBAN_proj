@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from app.utils.storage import db, User, Session
+from app import limiter
 import hashlib
 import json
 import time
@@ -9,6 +10,7 @@ import time
 data_bp = Blueprint("data", __name__)
 
 @data_bp.route("", methods=["POST"])
+@limiter.limit("10 per minute")  # Limit data transmission rate to 10 requests per minute
 def send_data():
     try:
         data = request.json

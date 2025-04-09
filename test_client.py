@@ -121,8 +121,8 @@ class WBANDeviceSimulator:
 if __name__ == "__main__":
     # Example usage
     BASE_URL = "http://localhost:5000"  # Change this to your deployed server URL
-    USER_ID = "user1"
-    PASSWORD = "1234"
+    USER_ID = "user_1"  # Update this to match your registered user
+    PASSWORD = "test123"  # Update this to match your registered user's password
     
     # Create simulator instance
     simulator = WBANDeviceSimulator(BASE_URL, USER_ID, PASSWORD)

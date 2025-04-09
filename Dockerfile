@@ -1,5 +1,17 @@
-# Use a lightweight Python image
-FROM python:3.9-slim
+# Use Debian as base image
+FROM debian:bullseye-slim
+
+# Set environment variables to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python and other dependencies
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set Python 3 as default
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Set the working directory in the container
 WORKDIR /app
@@ -8,7 +20,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the entire project (including app/ structure) into the container
 COPY . .
@@ -20,9 +32,5 @@ EXPOSE 5000
 ENV FLASK_APP=app
 ENV FLASK_ENV=development
 
-# Create a startup script
-RUN echo '#!/bin/bash\npython init_db.py\npython main.py' > /app/start.sh
-RUN chmod +x /app/start.sh
-
 # Command to run your app
-CMD ["/app/start.sh"]
+CMD python main.py
