@@ -12,10 +12,9 @@ A secure authentication and data transmission system for **Wireless Body Area Ne
 - **PostgreSQL Integration**: Robust database storage for users and sessions.
 - **Docker Support**: Containerized application with Docker and Docker Compose.
 - **Structured API Responses**: Beautiful and well-formatted JSON responses with proper units and timestamps.
+- **Rate Limiting**: Protection against brute force and DDoS attacks.
 
 ### Upcoming Features
-- **ECC Key Management**: Implementation of Elliptic Curve Cryptography for public key generation.
-- **Rate Limiting**: Protection against brute force and DDoS attacks.
 - **Security Logging**: Comprehensive audit trails and security event monitoring.
 - **Cloud Deployment**: Production-ready cloud deployment with proper security measures.
 
@@ -58,17 +57,37 @@ Ensure you have the following installed:
 
 2. **Build and run with Docker**:
    ```sh
-   docker-compose up --build -d
+   # Clean up any existing containers
+   docker-compose down
+   docker system prune -f
+
+   # Build and start the containers
+   docker-compose up --build
    ```
 
-The application will be available at `http://localhost:5000`
+The application will be available at:
+- Flask Application: `http://localhost:5000`
+- pgAdmin: `http://localhost:5050` (login: admin@admin.com / admin)
+- PostgreSQL: `localhost:5433`
 
 ## Database Access
 
-To view the PostgreSQL database:
-```sh
-docker exec -it postgres_db psql -U postgres -d wban_db
-```
+You can access the database in multiple ways:
+
+1. **Through pgAdmin**:
+   - Open `http://localhost:5050`
+   - Login with email: `admin@admin.com` and password: `admin`
+   - Add a new server with:
+     - Host: `postgres_db`
+     - Port: `5432`
+     - Database: `wban_db`
+     - Username: `postgres`
+     - Password: `postgres`
+
+2. **Through Docker CLI**:
+   ```sh
+   docker exec -it postgres_db psql -U postgres -d wban_db
+   ```
 
 Useful PostgreSQL commands:
 ```sql
@@ -90,6 +109,7 @@ SELECT * FROM sessions;
 ### 1. Register User
 **URL**: `/register`  
 **Method**: `POST`  
+**Rate Limit**: 3 requests per hour  
 **Request Body**:
 ```json
 {
@@ -101,13 +121,16 @@ SELECT * FROM sessions;
 ```json
 {
     "message": "User registered successfully",
-    "pseudo_identity": "<generated_pid>"
+    "user_id": "user1",
+    "pseudo_identity": "<generated_pid>",
+    "public_key": "<public_key_pem>"
 }
 ```
 
 ### 2. Authenticate User
 **URL**: `/authenticate`  
 **Method**: `POST`  
+**Rate Limit**: 5 requests per minute  
 **Request Body**:
 ```json
 {
@@ -119,13 +142,15 @@ SELECT * FROM sessions;
 ```json
 {
     "message": "Authentication successful",
-    "session_key": "<generated_session_key>"
+    "session_key": "<generated_session_key>",
+    "timestamp": <unix_timestamp>
 }
 ```
 
 ### 3. Send Encrypted Data
 **URL**: `/data`  
 **Method**: `POST`  
+**Rate Limit**: 10 requests per minute  
 **Request Body**:
 ```json
 {
@@ -187,6 +212,7 @@ SELECT * FROM sessions;
 - **Password Protection**: Bcrypt securely hashes passwords before storing them.
 - **Database Security**: PostgreSQL with proper access controls.
 - **Containerization**: Isolated environments with Docker.
+- **Rate Limiting**: Protection against brute force attacks and DDoS.
 
 ## Contributing
 
@@ -199,5 +225,5 @@ This project is licensed under the **MIT License**.
 ## Contact
 
 **Suchit B Artal**  
-📧 [suchitartal.2020@gmail.com](mailto:suchitartal.2020@gmail.com)  
+📧 [suchitartartal.2020@gmail.com](mailto:suchitartal.2020@gmail.com)  
 🔗 [GitHub](https://github.com/SuchitArtal) | [LinkedIn](https://linkedin.com/in/username)
