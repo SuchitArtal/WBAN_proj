@@ -1,0 +1,4 @@
+Retrieving logs...
+Logs were saved to /home/wsl_ubuntu/wban_project/.elasticbeanstalk/logs/250410_104825
+Logs were saved to /home/wsl_ubuntu/wban_project/.elasticbeanstalk/logs/250410_104825
+Updated symlink at /home/wsl_ubuntu/wban_project/.elasticbeanstalk/logs/latest
