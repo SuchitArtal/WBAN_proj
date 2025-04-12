@@ -15,7 +15,7 @@ def encrypt_data(session_key, plaintext):
         "nonce": nonce.hex()
     }
 
-if __name__ == "__main__":
+if __name__ == "__main__":SELECT * FROM users;
     # Get session key from user
     session_key_hex = input("Enter your session key (from authentication): ")
     user_id = input("Enter your user_id: ")

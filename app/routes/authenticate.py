@@ -1,6 +1,6 @@
 import hashlib
 from flask import Blueprint, request, jsonify
-from app.utils.storage import db, User, Session  # Ensure Session is correctly imported
+from app.utils.storage import db, User, Session, ECCKey  # Import ECCKey model
 from app import bcrypt, limiter
 from app.utils.crypto import load_private_key, get_private_key_from_db
 import os
@@ -32,9 +32,9 @@ def authenticate():
         if not bcrypt.check_password_hash(user.hashed_password, password):
             return jsonify({"error": "Invalid password"}), 401
 
-        # Get the user's private key from database
-        private_key_pem = get_private_key_from_db(user.user_id, db)
-        if not private_key_pem:
+        # Retrieve the private key from the ECCKey table
+        ecc_key = ECCKey.query.filter_by(user_id=user.user_id).first()
+        if not ecc_key:
             return jsonify({"error": "Private key not found"}), 500
         
         # Generate a random session key

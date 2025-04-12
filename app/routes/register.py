@@ -1,6 +1,6 @@
 import hashlib
 from flask import Blueprint, request, jsonify
-from app.utils.storage import db, User  # Import User model & database
+from app.utils.storage import db, User, ECCKey  # Import User model, database, and ECCKey model
 from app import bcrypt, limiter
 from app.utils.crypto import generate_ecc_key_pair
 
@@ -31,21 +31,27 @@ def register():
         # Generate ECC key pair
         private_key_pem, public_key_pem = generate_ecc_key_pair()
 
-        # Create new user object with private key included
+        # Create new user object
         new_user = User(
             user_id=user_id,
             pseudo_identity=pseudo_identity,
             hashed_password=hashed_password,
-            public_key=public_key_pem,
-            private_key=private_key_pem  # Store private key in user model
+            public_key=public_key_pem
         )
 
-        # Add user to the database
+        # Add user to the database and commit
         db.session.add(new_user)
-        db.session.commit()
+        db.session.commit()  # Commit the user first to satisfy the foreign key constraint
 
-        # We don't need to create a separate entry in ecc_keys anymore
-        # since the private key is now stored directly in the user model
+        # Save the private key in the ECCKey table
+        new_ecc_key = ECCKey(
+            user_id=user_id,
+            private_key=private_key_pem
+        )
+
+        # Add ECC key to the database
+        db.session.add(new_ecc_key)
+        db.session.commit()
 
         return jsonify({
             "message": "User registered successfully",

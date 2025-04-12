@@ -5,12 +5,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Load PostgreSQL configuration from environment variable
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql://postgres:postgres@db/wban_db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize extensions
@@ -22,15 +26,16 @@ migrate = Migrate(app, db)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=os.getenv("REDIS_URL", "memory://")  # Use Redis if available
 )
 
 # Import models
-from app.utils.storage import User, Session
+from models.models import User, Session, ECCKey  # Import models
 
-# Create tables
-with app.app_context():
-    db.create_all()
+# Remove or comment out the following block
+# with app.app_context():
+#     db.create_all()
 
 # Import and register blueprints
 from app.routes.register import register_bp

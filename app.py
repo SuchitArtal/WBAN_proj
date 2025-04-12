@@ -2,6 +2,10 @@ from flask import Flask, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import time
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load environment variables from .env
 
 # Initialize Flask app
 app = Flask(__name__)
